@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Mining_Stack_Demo</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.4.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.4.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+<script>
+  
+mapboxgl.accessToken = 'pk.eyJ1Ijoic293amFueWFlbm5hbSIsImEiOiJjamk1dnRta3Uwb2FyM3FtcmRkM2h0Z2gwIn0.2Fuzb-3EnJBBgzCcWHwKfw';
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/satellite-streets-v10',    
+    center: [85.5141, 22.15024],
+    zoom: 14
+});
+
+map.addControl(new mapboxgl.NavigationControl());
+
+map.on('load',() => {
+  const tilesUrl = 'https://tileserver.skylarkdrones.com/orthomosaic-2019-10-17-090409835944/{z}/{x}/{y}.png';
+  map.addLayer({
+    id: 'rasters',
+    type: 'raster',
+    layout: {
+      visibility: 'visible',
+    },
+    source: {
+      type: 'raster',
+      tiles: [tilesUrl],
+      tileSize: 256,        
+    },
+  });
+  map.addLayer({
+    id: 'vectors',
+    type: 'fill',
+    source: {
+      type: 'geojson',
+      data: 'https://skylarkvdpuk.blob.core.windows.net/project/stack-volumes-2019-10-17-142329511056 (1).geojson',
+    },
+    layout: {
+      visibility: 'visible',
+    },
+    paint: {
+      'fill-outline-color': ['to-color', ['get', 'stroke'], 'green'],
+      'fill-opacity': 0.5,
+      'fill-color': 'rgba(0,0,0,0)',
+    },
+  });
+    
+  map.addLayer({
+    id: 'vectors_line',
+    type: 'line',
+    source: {
+      type: 'geojson',
+      data: 'https://skylarkvdpuk.blob.core.windows.net/project/stack-volumes-2019-10-17-142329511056 (1).geojson',
+    },
+    layout: {
+      visibility: 'visible',
+    },
+    paint: {        
+      'line-color': ['to-color', ['get', 'stroke'], 'cyan'],
+      'line-width': 3,      
+    },
+  });
+
+  map.fitBounds([
+    [85.50925, 22.14621],
+    [85.51895, 22.15427]
+  ]);
+
+  var popup = new mapboxgl.Popup({
+    closeButton: false,
+    closeOnClick: false
+  });
+ 
+  map.on('click', 'vectors', function(e) { 
+    var coordinates = e.lngLat;
+    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+      coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+    } 
+    var str= '';
+    var props = Object.entries(e.features[0].properties);
+    for(let obj in props) {  
+      if(props[obj][0] === "stroke") {
+        continue;
+      }
+      str+= `<p>${props[obj][0]}: ${props[obj][1]}</p>`;
+    }
+    new mapboxgl.Popup()  
+      .setLngLat(coordinates)
+      .setHTML(str)
+      .addTo(map);
+  });
+  map.on('mouseenter', 'vectors', function () {
+        map.getCanvas().style.cursor = 'pointer';
+    });
+
+        // Change it back to a pointer when it leaves.
+  map.on('mouseleave', 'vectors', function () {
+        map.getCanvas().style.cursor = '';
+
+    });
+});
+</script>
+
+</body>
+</html>
